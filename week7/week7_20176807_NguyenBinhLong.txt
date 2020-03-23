@@ -1,0 +1,144 @@
+Assignment 1:
++ li $a0,-45 -> load value $a0=-45 
++ Address of the instruction: "jal abs" is 0x400004 and "nop" is 0x400008		
+ -> After running "jal abs", address of next instruction (0x400008) is stored into $ra. After finish running "abs" function, "jr $ra" jumps back into next instruction "nop"
++ sub $v0,$zero,$a0 ->  $v0 = -$a0 = 45
++ bltz $a0,done -> if $a0<0 then "abs" returns v0=45
++ add $v0,$a0,$zero -> if not ($a0=45 > 0), $v0 = $a0 = 45 => then "abs" returns v0=45
+=> The result is stored in $s0 = 45, which is correct.
+
+------------------------------
+Assignment 2:
++	li $a0,2 #load test input
+ 	li $a1,6
+ 	li $a2,9
+ -> load values: $a0=2, $a1=6, $a2=9
++ Address of the instruction: "jal max" is 0x40000c and "nop" is 0x400010	
+ -> after running "jal max", address of next instruction (0x400010) is stored into $ra
++ 	add $v0,$a0,$zero #copy (a0) in v0; largest so far
+	sub $t0,$a1,$v0 #compute (a1)-(v0)
+	bltz $t0,okay #if (a1)-(v0)<0 then no change
+	nop
+	add $v0,$a1,$zero #else (a1) is largest thus far
+ -> Since $t0 = $a1-$v0 = 6-2 = 4 > 0 => v0 = a1 = 6 
++	sub $t0,$a2,$v0 #compute (a2)-(v0)
+	bltz $t0,done #if (a2)-(v0)<0 then no change
+	nop
+	add $v0,$a2,$zero #else (a2) is largest overall
+ -> Since t0 = $a2-$v0 = 9-6 = 3 > 0 => v0 = a2 = 9 
++	jr $ra #return to calling program 
+ -> return to "nop" instruction with v0 = 9
+=> The result is stored in $s0 = 9, which is correct.
+
+
+------------------------------
+Assignment 3:
++ 	li $s0, 1
+	li $s1, 2
+ -> load values: $s0=1, $s1=2
++	addi $sp,$sp,-8 -> $sp = 0x7fffeffc - 8 = 0x7fffeff4
+ 	sw $s0,4($sp) #push $s0 to stack -> Value(0x7fffeff8) = $s0 = 1
+	sw $s1,0($sp) #push $s1 to stack -> Value(0x7fffeff4) = $s1 = 2
++	lw $s0,0($sp) #pop from stack to $s0
+ -> $s0 = Value(0x7fffeff4) = 2
+	lw $s1,4($sp) #pop from stack to $s1
+ -> $s1 = Value(0x7fffeff8) = 1
+	addi $sp,$sp,8 #adjust the stack pointer
+ -> $sp = 0x7fffeff4 + 8 = 0x7fffeffc
+
+
+------------------------------
+Assignment 4:
++ The basic idea of the program is calculating n! using recursive: 			
+	F(n) = n * F(n-1), F(1) = 1
++ To do that we store the state of each stack frame into a stack:
+	- "Warp" function will store frame pointer, $ra and load test input $a0, then jump to "FACT"
+	- "FACT" will calculate the n! recursively and jump to "done" when finished
++ Stack frame with n = 3:
+	----------------
+	$a0 = 1
+	$ra = 0x00400080
+	$fp = 0x7fffefe8
+	----------------
+	$a0 = 2
+	$ra = 0x00400080
+	$fp = 0x7fffeff4
+	----------------
+	$a0 = 3
+	$ra = 0x00400038
+	$fp = 0x7fffeffc
+		
+
+------------------------------
+Assignment 5:
+.text
+main: 	
+#$t0 stores max value, with index is stored in $t1
+#$t2 stores min value, with index is stored in $t3
+
+	#load test inputs
+	li $s0,1 
+	li $s1,2
+	li $s2,3
+	li $s3,-1 
+	li $s4,-2
+	li $s5,4
+	li $s6,7
+	li $s7,8
+	
+#push into stack
+push:
+	addi $sp,$sp,-32	#init stack with 8 component
+	sw $s0,0($sp)
+	sw $s1,4($sp)
+	sw $s2,8($sp)
+	sw $s3,12($sp)
+	sw $s4,16($sp)
+	sw $s5,20($sp)
+	sw $s6,24($sp)
+	sw $s7,28($sp)
+end_push:
+	
+#jump to function to find max and min
+	jal find_max_min
+	
+	add $t0,$a0,$zero	#store max value inside $t0
+	add $t1,$a1,$zero	#store max value index inside $t1
+	add $t2,$a2,$zero	#store min value inside $t2
+	add $t3,$a3,$zero	#store min value index inside $t3
+	
+	li $v0,10		#terminate
+	syscall
+	
+find_max_min:
+	addi $t0,$t0,0		#init $t0 = 0
+	addi $t1,$t1,8		#n = 8
+	addi $a0,$zero,0	#init max value = 0
+	addi $a2,$zero,999999	#init min value = 999999
+	
+loop:
+	beq $t0,$t1,end_loop
+	lw $t2,0($sp)		#pop stack
+		
+#find max
+	blt $t2,$a0,check_min	#if less then max then check if it is min
+	#save max value & index
+	add $a0,$zero,$t2
+	add $a1,$zero,$t0
+		
+#find min
+check_min:
+	bgt $t2,$a2,end_check	#if greater than min then stop check
+	#save min value & index
+	add $a2,$zero,$t2
+	add $a3,$zero,$t0
+		
+end_check:
+		
+#free stack
+	addiu $sp,$sp,4		#decrease stack size
+	addi $t0,$t0,1		#increase index
+	j loop
+		
+end_loop:
+	jr $ra	#jump back

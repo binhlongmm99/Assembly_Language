@@ -1,0 +1,11 @@
+Assignment 1:
++	li $a0, 0x5B # set value for segments
+	jal SHOW_7SEG_LEFT # show
+	nop
+Since 0x5B = 0101 1011 -> which will display digit "2" in left LED
++	li $a0, 0x6F # set value for segments
+	jal SHOW_7SEG_RIGHT # show
+	nop
+Since 0x6F = 0101 1011 -> which will display digit "9" right LED
+=> The program will display number "29"
+

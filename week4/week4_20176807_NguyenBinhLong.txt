@@ -1,0 +1,98 @@
+Assignment 1:
+- Test case 1:
+	+ $s1 = 0x00000001 = 1
+	+ $s2 = 0x00000002 = 2
+	-> $s3 = 0x00000003 = 3
+	
+	+ $t1 = 0x00000003 > 0,
+	+ $s3 > $s1 -> $t2 == 0 -> $t0 == 0
+	=> not overflow
+
+- Test case 2:
+	+ $s1 = 0x77359400 = 2000000000
+	+ $s2 = 0x77359401 = 2000000001
+	-> $s3 = 0xee6b2801 = -294967295
+	
+	+ $t1 = 0x00000001 > 0
+	+ $s3 < $s1 -> $t2 == 1 -> $t0 == 1
+	=> overflow
+
+
+------------------------------
+Assignment 2:
+#Laboratory Exercise 4, Home Assignment 2
+.text
+	li $s0, 0x12345678
+	
+	# extract MSB from $0
+	andi $t0, $s0, 0xff000000
+	srl $t0, $t0, 24
+	
+	andi $t1, $s0, 0xffffff00	# clear LSB of $s0
+	ori $t2, $s0, 0x000000ff	# set LSB of $s0	
+	andi $s0, $s0, 0x00000000	# clear $s0		
+
+
+------------------------------
+Assignment 3:
+a. abs $s0,s1
+.text
+	li 	$s1, -5			# $s1 = -5
+	sra	$at, $s1, 0x0000001f	# set $at = -1 if %s1 < 0, %at = 0 if %s1 >= 0
+	xor	$s0, $at, $s1		# set $s0 = NOT $s1 if $1 = -1, $s0 = $s1 if $1 = 0
+	subu	$s0, $s0, $at		# $s0 = $s0 - $at	
+
+b. move $s0,s1
+.text
+	li 	$s1, 5		# $s1 = 5
+	addiu	$s0, $s1, 0	# $s0 <= $s1 
+
+c. not $s0
+.text
+	li	$s0, 1			#$s0 = 1
+	nor	$s0, $s0, $zero		#bit inverse $s0	
+
+d. ble $s1,s2,L
+.text
+	li	$s1, 1			#$s1 = 1
+	li	$s2, -2			#s2 = -2
+	slt	$t0, $s2, $s1		
+	beq	$t0, $zero, L		# if $t0 = 0, jump to L 
+L:
+
+
+------------------------------
+Assignment 4:
+.text
+	li $t0, 0 		#No Overflow is default status
+	li $s1, 2000000000
+	li $s2, 2000000001
+	addu $s3, $s1, $s2
+
+	xor $t1, $s1, $s2 	#Test if $s1 and $s2 have the different sign
+	bltz $t1, EXIT 		
+
+	xor $t1, $s3, $s1 	#Test if $s3 and $s1 have the same sign
+	bgtz $t1, EXIT 		
+ 
+	xor $t1, $s3, $s2 	#Test if $s3 and $s2 have the same sign
+	bgtz $t1, EXIT 		
+
+OVERFLOW:
+	li $t1, 1
+
+EXIT:
+
+
+------------------------------
+Assignment 5:
+.text
+	li $s0, 1 		#s0 = 1
+
+	sll $s1, $s0, 1 	#s1 = s0 * 2
+	sll $s1, $s0, 2 	#s1 = s0 * 4
+	sll $s1, $s0, 3 	#s1 = s0 * 8
+	sll $s1, $s0, 4 	#s1 = s0 * 16
+
+
+

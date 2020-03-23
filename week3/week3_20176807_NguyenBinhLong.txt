@@ -1,0 +1,129 @@
+Assignment 1:
+- If i<j: $t0 = 0 = $zero, "if-then" statement will be executed
+	+ $t1 = $t1+1 = 0x00000001
+	+ $t3 = 0x00000001
+- If i>=j: $t0 != $zero, "else" statement will be executed
+	+ $t1 = 0xffffffff
+	+ $t3 = 0x00000000
+- $pc increases 4 bit each time an instruction is done
+
+
+------------------------------
+Assignment 2:
+Initialize:	i = $s1 = -1, A[] = $s2 = {1,2,3,4,5,6}
+		n = $s3 = 2 , step = $s4 = 1, sum = $s5 = 0
+We will get the result: $s5 = 1+2+3= 0x00000006 
+
+
+------------------------------
+Assignment 3:
+- first 2 instructions load the value of test into $s1, $s1 = 0x00000001
+- next 3 lines load the number 0,1,2 to $t0, $t1, $t2 respectively.
+- next 3 lines test whether $s1 match any condition $t0, $t1, $t2
+If test = 1, case_1 will be executed:	+ $s2 = $s2 - $t1 = 0 - 1 = -1 = 0xffffffff
+					+ j jump to the end
+The obtained results are correct in all test cases.
+
+
+------------------------------
+Assignment 4:
+.text
+# Assign i, j
+	li $s1, 1		# i = $s1 = 1
+	li $s2, 2		# j = $s2 = 2
+	
+start:
+	#a. i<j
+	#	slt $t0,$s1,$s2
+	#	beq $t0,$zero,else
+	#b. i>=j
+	#	slt $t0,$s1,$s2
+	#	bne $t0,$zero,else
+	#c. i+j<=0
+	#	add $t0,$s1,$s2
+	#	slt $t1,$zero,$t0
+	#	bne $t1,$zero,else
+	#d. i+j>m+n  (assume that m and n are stored in s3 and s4 register respectively)
+	#	add $t0,$s1,$s2
+	#	add $t1,$s3,$s4
+	#	slt $t2,$t1,$t0
+	#	beq $t2,$zero,else
+	
+	addi $t1,$t1,1 		# then part: x=x+1
+	addi $t3,$zero,1 	# z=1
+	j endif 		# skip “else” part
+else: 	addi $t2,$t2,-1 	# begin else part: y=y-1
+	add $t3,$t3,$t3 	# z=2*z
+endif:
+
+---------------------------------
+Assignment 5:
+.data
+array: .word 1, 2, 3, 4, 5, 6
+.text
+# Assign i, n, step, sum, array A
+	li $s1, -1		# i = $s1 = 1
+	la $s2, array 		# starting address of A = $s2
+	li $s3, 2		# n = $s3 = 3
+	li $s4, 1		# step = $s4 = 1
+	li $s5, 0		# sum = $s5 = 0
+loop:
+	add $s1,$s1,$s4 	#i=i+step
+	add $t1,$s1,$s1 	#t1=2*s1
+	add $t1,$t1,$t1 	#t1=4*s1
+	add $t1,$t1,$s2 	#t1 store the address of A[i]
+	lw $t0,0($t1) 		#load value of A[i] in $t0
+	add $s5,$s5,$t0 	#sum=sum+A[i]
+	bne $s1,$s3,loop 	#if i != n, goto loop
+
+	# blt $s1, $s3, loop 	# a) i < n
+	# ble $s1, $s3, loop 	# b) i <= n
+	# bge $s5, $0, loop 	# c) sum > 0
+	# beq $t0, $0, loop 	# d) A[i] == 0
+
+---------------------------------
+Assignment 6: 
+.data
+A: .word 1, -2, -3, 6, 4
+n: .word 5
+max: .word 0
+i: .word 0
+step: .word 1
+tmp: .word 0
+result: .word 0
+
+.text
+	la $s0, A	#s0 = address of A[]
+	la $t1, n	
+	lw $s1, 0($t1)	#s1 = n (length of array)
+
+	la $t1, max
+	lw $s2, 0($t1)	#s2 = max
+	la $t1, i
+	lw $s3, 0($t1)	#s3 = i
+	la $t1, result
+	lw $s4, 0($t1)	#s4 = result
+	la $t1, step
+	lw $s5, 0($t1)	#s5 = step
+	la $t1, tmp
+	lw $s6, 0($t1)	#s6 = tmp
+
+loop: 
+	add $t1, $s3, $s3 	#t1 = 2*i
+	add $t1, $t1, $t1 	#t1 = 4*i
+	add $t1, $t1, $s0 	#t1 store address of A[i]
+	lw $t0, 0($t1) 	
+	lw $t2, 0($t1) 	
+	slt $t1, $t0, $zero 	# A[i] < 0
+	beq $t1, $zero, find 
+	sub $t0, $zero, $t0 	# get absolute of A[i] if A[i]<0
+find:
+	slt $t1, $t0, $s2 	#|A[i]| < max
+	bne $t1, $zero, check
+	add $s2, $zero, $t0 	#max = |A[i]|
+	add $s6, $zero, $t2 	#tmp = A[i]
+check:
+	add $s3, $s3, $s5	#i = i+step
+	bne $s3, $s1, loop
+	
+	add $s4,$zero,$s6 	#result = tmp

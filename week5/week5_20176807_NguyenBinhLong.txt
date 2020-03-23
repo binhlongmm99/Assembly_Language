@@ -1,0 +1,155 @@
+Assignment 1:
+- li $v0, 4: assign 4 to $v0
+- test: .asciiz "Hello World": Store string "Hello World\0" into data segment "test": 0x10010000
+- la $a0, test: load address of "test" into $a0, $a0 = 0x10010000
+- syscall: print string with argument $a0 
+=> print "Hello World"
+
+
+------------------------------
+Assignment 2:
+#Laboratory Exercise 5, Assignnment 2
+.data
+	message1: .asciiz "The sum of "
+	message2: .asciiz " and "
+	message3: .asciiz " is "
+.text
+	li $s0, 1
+	li $s1, 2
+	add $s2, $s0, $s1	#s2 = s0 + s1
+	
+	li $v0, 4
+	la $a0, message1
+	syscall			#print message1
+	li $v0, 1
+	add $a0, $zero, $s0
+	syscall			#print value of s0
+	li $v0, 4
+	la $a0, message2
+	syscall			#print message2
+	li $v0, 1
+	add $a0, $zero, $s1
+	syscall			#print value of s1
+	li $v0, 4
+	la $a0, message3
+	syscall			#print message3
+	li $v0, 1
+	add $a0, $zero, $s2
+	syscall
+
+
+------------------------------
+Assignment 3:
+.data
+x: .space 1000 		#destination string x, empty
+y: .asciiz "Hello" 	#source string y
+.text
+strcpy:
+	la $a0, x
+	la $a1, y
+	add $s0,$zero,$zero 	#s0 = i= 0
+L1:
+	add $t1,$s0,$a1 #t1 = s0 + a1 = i + y[0]
+			# = address of y[i]
+	lb $t2,0($t1)	#t2 = value at t1 = y[i]
+	add $t3,$s0,$a0 #t3 = s0 + a0 = i + x[0]
+			# = address of x[i]
+	sb $t2,0($t3) 	#x[i]= t2 = y[i]
+	beq $t2,$zero,end_of_strcpy #if y[i]==0, exit
+	nop
+	addi $s0,$s0,1 	#s0=s0 + 1 <-> i=i+1
+	j L1 		#next character
+	nop
+end_of_strcpy:
+
+Comment:
+- x: .space 1000: x is empty space with size 1000 bytes
+- Add instructions:	la $a0,x
+			la $a1,y
+to load address of x,y into $a0,$a1
+- lb $t2,0($t1): load first byte in value of $t1 into $t2
+- sb $t2,0($t3): set first byte of $t3 value with $t2 value
+=> Each byte of y is copied to x
+=> "x" holds value "Hello"
+
+------------------------------
+Assignment 4:
+.data
+	string: .space 50
+	Message1: .asciiz "Nhap xau:"
+	Message2: .asciiz "Do dai la: "
+.text
+main:
+get_string: #TODO
+	li $v0, 54
+	la $a0, Message1
+	la $a1, string
+	li $a2, 50
+	syscall
+get_length: 
+	la $a0, string 		# a0 = Address(string[0])
+	xor $v0, $zero, $zero 	# v0 = length = 0
+	xor $t0, $zero, $zero 	# t0 = i = 0
+check_char: 
+	add $t1, $a0, $t0 	# t1 = a0 + t0
+				#= Address(string[0]+i)
+	lb $t2, 0($t1) 		# t2 = string[i]
+	beq $t2,$zero,end_of_str # Is null char?
+	addi $v0, $v0, 1 	# v0=v0+1->length=length+1
+	addi $t0, $t0, 1 	# t0=t0+1->i = i + 1
+	j check_char
+end_of_str:
+	add $s0, $zero, $v0
+end_of_get_length:
+print_length: # TODO
+	li $v0, 56
+	la $a0, Message2
+	add $a1, $zero, $s0
+	syscall
+
+------------------------------
+Assignment 5:
+.data
+	string: .space 21
+	result: .space 21
+.text
+get_string:
+	li $v0, 8
+	la $a0, string
+	li $a1, 21
+	syscall
+get_length: 
+	la $a0, string 		# a0 = Address(string[0])
+	xor $v0, $zero, $zero 	# v0 = length = 0
+	xor $t0, $zero, $zero 	# t0 = i = 0
+check_char: 
+	add $t1, $a0, $t0 	# t1 = a0 + t0
+				#= Address(string[0]+i)
+	lb $t2, 0($t1) 		# t2 = string[i]
+	beq $t2,$zero,end_of_str # Is null char?
+	addi $v0, $v0, 1 	# v0=v0+1->length=length+1
+	addi $t0, $t0, 1 	# t0=t0+1->i = i + 1
+	j check_char
+end_of_str:
+	add $s0, $zero, $v0	# s0 = length
+	sub $s0,$s0,1		# s0= length-1 (array index starts from 0)
+			
+strcpy_inverse:
+	la $a0, string		# a0 = address(string[0])
+	la $a1, result		# a1 = address(result[0])
+	add $t0, $zero, $s0	# t0 = i = s0 = length(string) 
+	xor $t1,$zero,$zero 	# t1 = j  = 0
+loop:
+	add $t2, $t0, $a0 	# t2 = a0 + t0 = address(string[0]+i)
+	add $t3, $t1, $a1 	# t2 = a1 + t1 = address(result[0]+j)
+	lb $t4, 0($t2)		# t4 = string[i]
+	sb $t4, 0($t3)		# result[j] = t4
+	beq $t4,$zero,end_of_strcpy
+	subi $t0,$t0,1		#i--
+	addi $t1,$t1,1		#j++
+	j loop
+end_of_strcpy:
+	li	$v0, 55
+	la	$a0, result
+	li	$a1, 1
+	syscall
