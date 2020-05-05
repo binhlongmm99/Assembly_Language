@@ -1,5 +1,5 @@
 #--------------------------------------------------------------------------
-# Miniproject topic 8: : Write a program to:
+# Miniproject topic 8: Write a program to:
 # - Input the number of student in class
 # - Input name and mark
 # - Sort by mark
@@ -13,18 +13,18 @@
 	Invalid_input: .asciiz "Invalid input, try again: "
 	Name: .asciiz "\n\nName: "
 	Mark: .asciiz "Mark: "
-	
+
 	# Variable
 	string: .space 20		# Max name length
 	nb_student: .word 0		# Number of student
 	name_list: .space 400		# 20 student * max name length
 	mark_list: .space 80		# 20 student
-	
+
 
 .text
 	jal input_num
 	j get_data
-	
+
 
 # Get data
 # Argument: nb_student, name_list, mark_list
@@ -41,16 +41,16 @@ get_data_loop:
 	jal input_mark			# mark now in f0
 	#bnez $a1, end
 	# v0, a0, a1, a2 free
-	
+
 	# Copy name to list: s0, a0, a1, a2, t1, t2, t3, t4, t5 occupied
 	add $t4, $s3, $zero		# t4 = index
-	
+
 	# Save to mark_list
 	mul $t5, $t4, 4			# t5 = position in mark_list
 	la $a2, mark_list
 	add $a2, $a2, $t5
 	s.s $f0, 0($a2)
-	
+
 	# Save to name_list
 	mul $t4, $t4, 80		# t4 = 80 * t4
 	la $a0, name_list
@@ -58,7 +58,7 @@ get_data_loop:
 	la $a1, string
 	jal name_cpy
 	# s0, a0, a1, a2, t1, t2, t3, t4, t5 free
-	
+
 	# Check loop condition
 	beq $s3, $s4, get_data_end 	# if index = last index, exit
 	nop
@@ -67,7 +67,7 @@ get_data_loop:
 
 get_data_end:
 	j bubble_sort
-	
+
 
 # Bubble sort
 # Argument: nb_student, name_list, mark_list
@@ -83,49 +83,49 @@ bubble_sort_i_loop:
 	sub $s5, $s4, $s3			# s5 = n - i = end of j loop
 	li $s6, -1				# s6 = j
  	j bubble_sort_j_loop
- 	
+
 bubble_sort_j_loop:
 	addi $s6, $s6, 1			# j = j + 1
 	beq $s6, $s5, bubble_sort_i_loop	# if j = n - i -> break -> back to i loop
-	
+
 	# Get mark_list[i] and mark_list[i + 1] to compare
  	mul $s7, $s6, 4				# s7 = position in mark_list
 	la $a2, mark_list
 	add $a2, $a2, $s7
 	l.s $f0, 0($a2)				# f0 = mark_list[i]
 	l.s $f1, 4($a2)				# f1 = mark_list[i + 1]
- 	
+
  	# if mark[j] <= mark[j + 1] -> continue, otherwise -> swap
  	c.le.s $f0, $f1
  	bc1t bubble_sort_j_loop
- 	
+
  	# Swap mark
 	s.s $f0, 4($a2)
 	s.s $f1, 0($a2)
-	
+
 	# Swap name
 	mul $s7, $s6, 80			# s7 = position in name_list
 	la $a2, name_list
 	add $a2, $a2, $s7			# a2 = name[j]
 	addi $a3, $a2, 80			# a3 = name[j + 1]
-	
+
 	# Copy name[j] to string (temp)
 	la $a0, string				# a0 = string = dest
 	move $a1, $a2				# a1 = name[j] = source
 	jal name_cpy				# string = name[j]
-	
+
 	# Copy name[j + 1] to name[j]
 	move $a0, $a2				# a0 = name[j] = dest
 	move $a1, $a3				# a1 = name[j + 1] = source
 	jal name_cpy				# name[j] = name[j + 1]
-	
+
 	# Copy string (temp) to name[j + 1]
 	move $a0, $a3				# a0 = name[j + 1] = dest
 	la $a1, string				# a1 = string = source
 	jal name_cpy				# name[j + 1] = string
-	
+
 	j bubble_sort_j_loop
-	
+
 bubble_sort_end:
 	j print_all
 
@@ -142,13 +142,13 @@ print_all:				# Index = 0
 print_all_loop:
 	# Copy name + mark to print: s0, a0, a1, a2, t1, t2, t3, t4, t5 occupied
 	add $t4, $s3, $zero		# t4 = index
-	
+
 	# Copy mark to f12
 	mul $t5, $t4, 4			# t5 = position in mark_list
 	la $a2, mark_list
 	add $a2, $a2, $t5
 	l.s $f12, 0($a2)
-	
+
 	# Copy name to string
 	mul $t4, $t4, 80		# t4 = 80 * t4
 	la $a1, name_list
@@ -156,14 +156,14 @@ print_all_loop:
 	la $a0, string
 	jal name_cpy
 	# s0, a0, a1, a2, t1, t2, t3, t4, t5 free
-	
+
 	jal print_student
 
 	beq $s3, $s4, print_all_end 	# if index = last index, exit
 	nop
 	addi $s3, $s3, 1		# s3 = s3 + 1 <-> i = i + 1
 	j print_all_loop		# next loop
-	
+
 print_all_end:
 	j end
 
@@ -239,8 +239,8 @@ input_mark_error:
 	j input_mark_check
 
 input_mark_end:
-	jr $ra	
-	
+	jr $ra
+
 # Name copy
 # Ocuppy s0, s1, t1, t2, t3
 # Argument: $a0 destination string address, $a1 source string address
@@ -258,11 +258,11 @@ name_cpy_loop:
 	nop
 	addi $s0, $s0, 1		# s0 = s0 + 1 <-> i = i + 1
 	j name_cpy_loop			# next character
-	
+
 name_cpy_end:
 	jr $ra
-	
-	
+
+
 # Print student
 # Ocuppy v0, a0, f12
 # Arguments: f12 = mark, string = name
@@ -280,5 +280,5 @@ print_student:
 	li $v0, 2
 	syscall
 	jr $ra
-	
+
 end:
