@@ -2,177 +2,149 @@
 # Miniproject topic 2: Prime number  
 #------------------------------------------------
 
-#-----------------------------------------------------------------------------------
-# To input the value and check the validaton, we use register $v0, $a0 and $a1
-# @brief	Print the prime number from a range of an integer N to an integer M
-# @param[in]	$s0 - integer N
-# @param[in]	$s1 - integer M
-# @param[in]	$s2 - integer we consider, $s2 runs from N to M
-#		$s2++ after one loop
-# To check the validation of input, we use register $t5, $t6, $t7
-# @register	$t5 = -1
-# @register	$t6 = -2
-# @register	$t7 = -3
-# @return	result - the array of prime numbers
-#---------------------------------------------------
 .data
-	Message1: .asciiz "Input integer N: "
-	Message2: .asciiz "Input integer M: "
-	Result: .space 200			# allocating 50 integers
-	MessageResult1: .asciiz "The prime numbers are from "
-	MessageResult2: .asciiz " to "
-	MessageResult3: .asciiz ": "
-	MessageFailedParse: .asciiz "The format input is not correct!"
-	MessageChoosingCancel: .asciiz "The cancel button was choosen!"
-	MessageNoDataInputted: .asciiz "No data was inputted!"
+new_line:		.asciiz "\n"
+get_m_msg:		.asciiz	"Enter the integer N : "
+get_n_msg:		.asciiz	"Enter the integer M : "
+input_invalid_error_msg:.asciiz "Invalid input data !"
+cancel_error_msg:	.asciiz "Cancal was chosen !"
+no_input_error_msg:	.asciiz "OK was chosen but no input data"
+
 .text
 main:
-# Initializing $t5, $t6, $t7
-	li $t5, -1
-	li $t6, -2
-	li $t7, -3
-# Input N
-	li $v0, 51
-	la $a0, Message1
+	li	$v0, 51		
+	la	$a0, get_m_msg
 	syscall
-	beq $a1, $t5, failedParse
-	beq $a1, $t6, choosingCancel
-	beq $a1, $t7, noDataInputted
-	move $s0, $a0
+	
+	jal	catch_error
+	add	$t1, $zero, $a0		# copy the inputed value to $t1
+	
+	li	$v0, 51
+	la	$a0, get_n_msg
+	syscall
+	
+	jal	catch_error
+	add	$t2, $zero, $a0		# copy the inputed value to $t2
+	
+	
+for: 						# for i from N to M
+	sle	$t3, $t0, $t2	
+	beq	$t3, $zero, exit		# if i <= M, exit program
+	
+	add	$a0, $zero, $t0			# call is_prime(i)
+	jal	is_prime
+	
+	beq	$v1, $zero, for_continue 	# if i is not prime , continue for
+	
+	add	$a0, $zero, $t0			# call print_prime_number(i)
+	jal	print_number	
 
-# Input M
-	li $v0, 51
-	la $a0, Message2
-	beq $a1, $t5, failedParse
-	beq $a1, $t6, choosingCancel
-	beq $a1, $t7, noDataInputted
-	syscall
-	move $s1, $a0
-	j trueFormat
-failedParse:
-# Print "The format input is not correct!"
-	li $v0, 4
-	la $a0, MessageFailedParse
-	syscall
-	j end_main
-choosingCancel:
-# Print "The cancel button was choosen!"
-	li $v0, 4
-	la $a0, MessageChoosingCancel
-	syscall
-	j end_main
-noDataInputted:
-# Print "No data was inputted!"
-	li $v0, 4
-	la $a0, MessageNoDataInputted
-	syscall
-	j end_main
-# Main loop
-# @param[i]	$t0 - index of array [2, ... , $s2]
-# @param[i]	$t1 - remainder of N / i
-# @param[i]	$t2 - index of array Result
-trueFormat:
-# Initial $t2
-	li $t2, 0
-# $s2 is counted from $s0 to $s1 to check prime
-	move $s2, $s0
-# Recursive loop:
-# For each number from N to M, we check whether it is prime by procedure checkPrime
-loop:
-	li $t0, 2		# i = 2
+for_continue:
+	addi	$t0, $t0, 1			# i = i + 1
+	j	for
 
-	sw $fp, -4($sp)		# save frame pointer
-	move $fp, $sp		# create a new frame pointer
-	addi $sp, $sp, -20	# take 4 words for: $fp, $s0, $s1, $ra
-	sw $ra, 12($sp)		# save return address
-	sw $s2, 8($sp)		# save s2
-	sw $s1, 4($sp)		# save s1
-	sw $s0, 0($sp)		# save s0
+exit:
+	li	$v0, 10
+	syscall
+		
+#----------------------------------------------------------------------------------
+# 	Procedure catch_error: catch error of dialog input
+#	param[in]	$a1	error code
+#----------------------------------------------------------------------------------	
+catch_error:
+	beq	$a1, -1, catch_input_invalid_error
+	beq	$a1, -2, catch_cancel_error
+	beq	$a1, -3, catch_no_input_error
+	
+	jr	$ra		# return
+catch_input_invalid_error:
+	li	$v0, 4
+	la	$a0, input_invalid_error_msg
+	syscall
+	j	exit
+catch_cancel_error:
+	li	$v0, 4
+	la	$a0, cancel_error_msg
+	syscall
+	j	exit
+catch_no_input_error:
+	li	$v0, 4
+	la	$a0, no_input_error_msg
+	syscall
+	j	exit
+	
 
-	jal checkPrime
+#----------------------------------------------------------------------------------
+# 	Procedure is_prime: Tells if num is prime
+#	param[in]	$a0	integer num
+#	return		$v1	1 if the number is prime, 0 if it's not
+#	Resigters usage:
+#		$s0		- variable x
+#		$s1, $s3	- temp resigter
+#----------------------------------------------------------------------------------
+is_prime:
+	subu	$sp, $sp, 12
+	sw	$s0, 0($sp)				# save the local enviroment
+	sw	$s1, 4($sp)
+	sw	$s3, 8($sp)
+	
+	ble	$a0, 1, is_prime_return_false
+	
+	addi	$s0, $s0, 2				# int x = 2	
 
-	lw $s0, 0($sp)		# restore s0
-	move $sp, $fp
-	lw $fp, -4($sp)		# restore frame pointer
-	lw $ra, -8($sp)		# restore return address
-	lw $s2, -12($sp)	# restore s2
-	lw $s1, -16($sp)	# restore s1
+is_prime_test:
+	slt	$s1, $s0, $a0			
+	bne	$s1, $zero, is_prime_loop 		# if (x >= num) 
+	
+	j	is_prime_return_true
+	
+is_prime_loop:
+	div	$a0, $s0
+	mfhi	$s3				    	    # c = (num % x)
+	bne	$s3, $zero, is_prime_loop_continue	# if (c == 0)
+	
+	j	is_prime_return_false
+	
+is_prime_loop_continue:
+	addi	$s0, $s0, 1				# x = x + 1
+	j	is_prime_test
+	
+is_prime_return_true:
+	addi	$v1, $zero, 1 			    	    # It's a prime, return 1 
+	j	is_prime_return
 
-	sub $s3, $s2, $s1	# s2 = N - M
-	bgez $s3, end_loop	# if N > M then end loop
-	nop
-	#if not
-	addi $s2, $s2, 1	# N ++
+is_prime_return_false:
+	add	$v1, $zero, $zero			    # It's not a prime, return 0
+	j	is_prime_return
 
-	j loop
-end_loop:
-# @param[i]	$t3 - index of array Result from 0 to $t2 to print each element in array Result
-	li $t3, 0
-# Print "The prime numbers from "
-	li $v0, 4
-	la $a0, MessageResult1
+is_prime_return:
+	lw	$s0, 0($sp)				    # restore the prior enviroment
+	lw	$s1, 4($sp)				    # restore the prior enviroment
+	lw	$s3, 8($sp)				    # restore the prior enviroment
+	addu	$sp, $sp, 12
+	jr	$ra					    # return 0
+	
+#----------------------------------------------------------------------------------
+#	Procedure print_prime_number: print out prime number
+#	param[in]	$a0	the prime number
+#----------------------------------------------------------------------------------
+print_number:
+	subu	$sp, $sp, 12
+	sw	$ra, 0($sp)	# save the local enviroment
+	sw	$v0, 4($sp)	# save the local enviroment
+	sw	$a0, 8($sp)	# save the local enviroment
+		
+	li	$v0, 1		# print prime_number 
 	syscall
-# Print N
-	li $v0, 1
-	move $a0, $s0
+	
+	li	$v0, 4		# prime new line
+	la	$a0, new_line
 	syscall
-# Print " to "
-	li $v0, 4
-	la $a0, MessageResult2
-	syscall
-# Print M
-	li $v0, 1
-	move $a0, $s1
-	syscall
-# Print ": "
-	li $v0, 4
-	la $a0, MessageResult3
-	syscall
-loop_output:
-	li $v0, 1
-	la $a0, Result
-	add $a0, $a0, $t3	# address of prime_array[index]
-	lw $a0, 0($a0)
-	syscall
-
-	# print a white space
-	li $v0, 11
-	li $a0, ' '
-	syscall
-
-	addi $t3, $t3, 4	# next element
-	bge $t3, $t2, end_main
-	nop
-	j loop_output
-end_main:
-# exit the program
-	li $v0, 10
-	syscall
-#-----------------------------------------------------------------------------
-# Procedure checkPrime: We will check whether this number is prime
-# Algorithm:
-# If there are any number X that can divide one number in array from 2 to X-1 then it is not a prime number
-# Else X is a prime number
-checkPrime:
-loop_checkPrime:
-	# Divide $s2 into $t0
-	divu $s2, $t0
-	mfhi $t1		# move the remainder into $t1
-	#If $t1 = 0 then this number is not prime
-	beqz $t1, NotPrime
-	nop
-	#if not, continue loop until i < n
-	addi $t0, $t0, 1	# i++
-	# condition: i < $s2
-	bge $t0, $s2, end_checkPrime
-	nop
-	j loop_checkPrime
-end_checkPrime:
-# store the prime numbers into array Result
-	la $t4, Result
-	add $t4, $t4, $t2	# address of Result[index]
-	sw $s2, 0($t4)		# store integer we are considering (from N to M) into Result
-	addi $t2, $t2, 4	# index++
-	jr $ra
-NotPrime:
-	jr $ra
+	
+	lw	$ra, 0($sp)	# restore the prior enviroment
+	lw	$v0, 4($sp)	# restore the prior enviroment
+	lw	$a0, 8($sp)	# restore the prior enviroment
+	addu	$sp, $sp, 12	# restore the prior enviroment
+	
+	jr	$ra
+	
